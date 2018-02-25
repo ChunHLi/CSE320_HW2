@@ -61,9 +61,9 @@ int main(int argc, char** argv) {
 		uint64_t h = ((uint64_t*)ram)[k];
 		ramArray[j].header = h;
 		//printf("%"PRIu64"\n",ramArray[j].header);
-		ramArray[j].id = h & 0x01;
+		ramArray[j].flag = h & 0x01;
 		//printf("%d\n",ramArray[j].id);
-		ramArray[j].flag = (h>>1) & 0x03;
+		ramArray[j].id = (h>>1) & 0x03;
 		//printf("%d\n",ramArray[j].flag);
 		ramArray[j].size = h>>3;
 		h >>= 3;
@@ -90,17 +90,49 @@ int main(int argc, char** argv) {
 	 * 3. Blocks with lowest size goes first
 	 */
 	
+	void swap(block *x, block *y){
+    		block tmp = *x;
+    		*x = *y;
+    		*y = tmp;
+	}
+
 	/* sorting via Application ID first */
-	/* sorting via Allocated blocks */
-	/* sorting via lowest size blocks */
+	if (numBlock < 2){
+	} else {
+		/* sorting via Application ID first */		
+		/* sorting via Allocated blocks */
+		/* sorting via lowest size blocks */
+		for (i = 0; i < numBlock - 1; i++){
+			int min = i;
+			for(j = i + 1; j < numBlock; j++){
+				if (ramArray[j].id < ramArray[min].id){
+					min = j;
+				} else if (ramArray[j].id == ramArray[min].id){
+					if (ramArray[j].flag > ramArray[min].flag){
+						min = j;
+					} else if (ramArray[j].flag == ramArray[min].flag){
+						if (ramArray[j].size < ramArray[min].size){
+							min = j;
+						}
+					}	
+				}
+			}
+			swap(&ramArray[min],&ramArray[i]);	
+		}
+		/*
+	 	* Adjacent free blocks must be coalesced if they are part of the same application
+	 	*/
+	}	
+	for (i = 0; i < numBlock; i++){
+		printf("\n");
+		printf("Application ID: %d\n", ramArray[i].id);
+		printf("Allocation Flag: %d\n", ramArray[i].flag);
+		printf("Block Size: %d\n", ramArray[i].size);
+	}	
 
 	/*
-	 * Adjacent free blocks must be coalesced if they are part of the same application
-	 */
-
-	/*
-	 * Block with size of 16 bytes to be added
-	 */
+	* Block with size of 16 bytes to be added
+	*/
 
     /*
      * Do not modify code below.
