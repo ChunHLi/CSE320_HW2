@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
 	 * to 32;
 	 * no blocks will have the same size, application id and allocation flag
 	 */
+	cse320_sbrk(1024-128);
 	typedef struct block{ 
 		uint64_t header;
 		uint64_t payload[124]; //(1024-16-16)/8 max size of ram		
@@ -45,8 +46,16 @@ int main(int argc, char** argv) {
 	/*
 	 * Storing the ram into an array to make it easier to access and sort data
 	 */
-	
 	int i;
+	/*
+	for (i=0;((uint64_t*)ram)[i]!=0;i++){
+		int j;
+		for (j=0; j<8; j++){
+			printf("%02x",((uint8_t*)ram)[i*8+j]);
+		}
+		printf("\n");
+	}
+	*/
 	for (i=0; i<32; i++){
 		ramArray[i].header = 0;
 		int j;
@@ -122,18 +131,69 @@ int main(int argc, char** argv) {
 		/*
 	 	* Adjacent free blocks must be coalesced if they are part of the same application
 	 	*/
-	}	
-	for (i = 0; i < numBlock; i++){
+	}
+	i = 0;
+	while (i < numBlock - 1){
+		if ((ramArray[i].flag == 0 && ramArray[i + 1].flag == 0) &&
+			(ramArray[i].id == ramArray[i + 1].id)){
+			ramArray[i].size = ramArray[i].size + ramArray[i + 1].size;
+			ramArray[i].header = (((uint64_t)ramArray[i].size)<<3) & (((uint64_t)ramArray[i].id)<<1);
+			int l = 0;
+			while (ramArray[i].payload[l] != 0){
+				l++;
+			}
+			ramArray[i].payload[l] = ramArray[i].footer;
+			l++;
+			ramArray[i].payload[l] = ramArray[i + 1].header;
+			l++;
+			int n = 0;
+			while (ramArray[i + 1].payload[n] != 0){
+				ramArray[i].payload[l] = ramArray[i + 1].payload[n];
+				l++;
+				n++;
+			}
+			
+			ramArray[i].footer = (((uint64_t)ramArray[i].size)<<3) & (((uint64_t)ramArray[i].id)<<1);
+			int m;
+			for (m = i + 1; m < numBlock; m++){
+				ramArray[m] = ramArray[m+1];
+			}
+			i--;
+			numBlock--;
+		}
+		i++;
+	}
+	//printf("%d\n",numBlock);
+	ramArray[numBlock].size = 2;
+	ramArray[numBlock].header = 0;
+	ramArray[numBlock].header = ((uint64_t)ramArray[numBlock].size)<<3;
+	//printf("%"PRIu64"\n",(ramArray[numBlock].header)>>3);
+	ramArray[numBlock].footer = ((uint64_t)ramArray[numBlock].size)<<3;
+	/*
+	* Block with size of 16 bytes to be added
+	*/
+	/*for (i = 0; i < numBlock; i++){
 		printf("\n");
 		printf("Application ID: %d\n", ramArray[i].id);
 		printf("Allocation Flag: %d\n", ramArray[i].flag);
 		printf("Block Size: %d\n", ramArray[i].size);
+	}*/
+	int r;
+	int s = 0;
+	for (r = 0; ramArray[r].size != 0; r++){	
+		((uint64_t*)ram)[s] = ramArray[r].header;
+		//printf("%"PRIu64"\n",((uint64_t*)ram)[s]);
+		s++;
+		int q;
+		for (q = 0; ramArray[r].payload[q] != 0; q++){
+			//printf("%"PRIu64"\n",ramArray[r].payload[q]);
+			((uint64_t*)ram)[s] = ramArray[r].payload[q];
+			s++;
+		}
+		((uint64_t*)ram)[s] = ramArray[r].footer;
+		//printf("%"PRIu64"\n",((uint64_t*)ram)[s]);
+		s++;
 	}	
-
-	/*
-	* Block with size of 16 bytes to be added
-	*/
-
     /*
      * Do not modify code below.
      */
