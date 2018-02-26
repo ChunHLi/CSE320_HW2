@@ -47,15 +47,13 @@ int main(int argc, char** argv) {
 	 * Storing the ram into an array to make it easier to access and sort data
 	 */
 	int i;
-	/*
-	for (i=0;((uint64_t*)ram)[i]!=0;i++){
+	/*for (i=0;((uint64_t*)ram)[i] != 0 || ((uint64_t*)ram)[i+1] != 0;i++){
 		int j;
 		for (j=0; j<8; j++){
 			printf("%02x",((uint8_t*)ram)[i*8+j]);
 		}
 		printf("\n");
-	}
-	*/
+	}*/
 	for (i=0; i<32; i++){
 		ramArray[i].header = 0;
 		int j;
@@ -66,7 +64,7 @@ int main(int argc, char** argv) {
 	}	
 	int j = 0;
 	int k = 0;
-	while (((uint64_t*)ram)[k]!=0){
+	while (((uint64_t*)ram)[k]+((uint64_t*)ram)[k+1]!=0){
 		uint64_t h = ((uint64_t*)ram)[k];
 		ramArray[j].header = h;
 		//printf("%"PRIu64"\n",ramArray[j].header);
@@ -75,6 +73,7 @@ int main(int argc, char** argv) {
 		ramArray[j].id = (h>>1) & 0x03;
 		//printf("%d\n",ramArray[j].flag);
 		ramArray[j].size = h>>3;
+		//printf("%"PRIu64"\n",((uint64_t)ramArray[j].size)<<3);
 		h >>= 3;
 		k++;
 		int l;
@@ -137,7 +136,9 @@ int main(int argc, char** argv) {
 		if ((ramArray[i].flag == 0 && ramArray[i + 1].flag == 0) &&
 			(ramArray[i].id == ramArray[i + 1].id)){
 			ramArray[i].size = ramArray[i].size + ramArray[i + 1].size;
-			ramArray[i].header = (((uint64_t)ramArray[i].size)<<3) & (((uint64_t)ramArray[i].id)<<1);
+			//printf("%"PRIu64"\n",((uint64_t)ramArray[i].size)<<3);
+			ramArray[i].header = (((uint64_t)ramArray[i].size)<<3) | (((uint64_t)ramArray[i].id)<<1);
+			//printf("%"PRIu64"\n",ramArray[i].header);
 			int l = 0;
 			while (ramArray[i].payload[l] != 0){
 				l++;
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
 				n++;
 			}
 			
-			ramArray[i].footer = (((uint64_t)ramArray[i].size)<<3) & (((uint64_t)ramArray[i].id)<<1);
+			ramArray[i].footer = (((uint64_t)ramArray[i].size)<<3) | (((uint64_t)ramArray[i].id)<<1);
 			int m;
 			for (m = i + 1; m < numBlock; m++){
 				ramArray[m] = ramArray[m+1];
@@ -185,7 +186,7 @@ int main(int argc, char** argv) {
 		//printf("%"PRIu64"\n",((uint64_t*)ram)[s]);
 		s++;
 		int q;
-		for (q = 0; ramArray[r].payload[q] != 0; q++){
+		for (q = 0; q < ramArray[r].size - 2; q++){
 			//printf("%"PRIu64"\n",ramArray[r].payload[q]);
 			((uint64_t*)ram)[s] = ramArray[r].payload[q];
 			s++;
@@ -193,7 +194,18 @@ int main(int argc, char** argv) {
 		((uint64_t*)ram)[s] = ramArray[r].footer;
 		//printf("%"PRIu64"\n",((uint64_t*)ram)[s]);
 		s++;
-	}	
+	}
+	/*
+	printf("\n");
+
+	for (i=0;((uint64_t*)ram)[i] != 0 || ((uint64_t*)ram)[i+1] != 0;i++){
+		int j;
+		for (j=0; j<8; j++){
+			printf("%02x",((uint8_t*)ram)[i*8+j]);
+		}
+		printf("\n");
+	}
+	*/	
     /*
      * Do not modify code below.
      */
