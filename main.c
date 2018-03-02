@@ -1,5 +1,6 @@
 #include "helper.h"
 #include <inttypes.h>
+#include <errno.h>
 
 int main(int argc, char** argv) {
     if (*(argv + 1) == NULL) {
@@ -26,7 +27,17 @@ int main(int argc, char** argv) {
 	 * to 32;
 	 * no blocks will have the same size, application id and allocation flag
 	 */
-	cse320_sbrk(1024-128);
+	if (ram == NULL){
+		errno = ENOENT;
+		printf("INIT_ERROR\n");
+		exit(errno);
+	}
+	void* ptr = cse320_sbrk(1024-128);
+	if (ptr == NULL){
+		errno = ENOENT;
+		printf("SBRK_ERROR\n");
+		exit(errno);
+	}
 	typedef struct block{ 
 		uint64_t header;
 		uint64_t payload[124]; //(1024-16-16)/8 max size of ram		
